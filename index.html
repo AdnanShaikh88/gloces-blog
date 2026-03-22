@@ -445,14 +445,14 @@
 
 <header>
   <div class="container">
-    <span class="site-name">ML Paper Blog · CVPR 2025</span>
+    <span class="site-name">ML Paper Blog · CVPR 2024</span>
   </div>
 </header>
 
 <div class="container">
   <div class="hero">
     <div class="meta-row">
-      <span class="tag">CVPR 2025</span>
+      <span class="tag">CVPR 2024</span>
       <span class="tag grey">Concept Erasure</span>
       <span class="tag grey">Diffusion Models</span>
       <span class="tag grey">Training-Free</span>
@@ -482,7 +482,7 @@
       Imagine asking an AI image generator to produce a photo of two celebrities at an event. Now imagine you need to "erase" one of them — because their likeness is copyrighted, or they simply don't consent to being generated. What do you do? Most existing methods will happily erase the target… and accidentally mangle the other person in the process.
     </p>
     <p>
-      This is precisely the problem that <strong>GLoCE (Gated Low-Rank Adaptation for Concept Erasure)</strong>, presented at CVPR 2025, sets out to fix. The paper introduces a surprisingly elegant, training-free approach to what they formally call <em>localized concept erasure</em> — the ability to surgically remove a specific concept from only the region of the image where it appears, leaving the rest untouched.
+      This is precisely the problem that <strong>GLoCE (Gated Low-Rank Adaptation for Concept Erasure)</strong> (Lee et al., CVPR 2024) sets out to fix. The paper introduces a surprisingly elegant, training-free approach to what they formally call <em>localized concept erasure</em> — the ability to surgically remove a specific concept from only the region of the image where it appears, leaving the rest untouched.
     </p>
 
     <!-- PROBLEM -->
@@ -496,6 +496,11 @@
       <strong>The Core Challenge</strong>
       Prior concept erasure methods suffer from a critical flaw: when a target concept (e.g., a celebrity's face) appears alongside a remaining concept (another celebrity), erasing the target degrades the fidelity of the entire image — not just the target region.
     </div>
+
+    <h3>Why Does This Matter?</h3>
+    <p>
+      This problem is highly relevant to real-world deployment of generative AI systems. Ensuring safe and controllable image generation is critical for preventing misuse such as deepfakes, copyright violations, and harmful content generation. Localized concept erasure enables fine-grained control, making diffusion models safer while preserving their usability — a balance that prior methods consistently failed to strike.
+    </p>
 
     <p>
       Previous solutions fall into a few broad camps: dataset censoring (expensive, slow, still leaky), post-generation filtering (easily bypassed), and fine-tuning-based erasure. The last category is the most promising, but existing fine-tuning methods — ESD, UCE, MACE, and others — all share a fundamental weakness: they operate globally on all image embeddings rather than locally on just the target region.
@@ -516,7 +521,7 @@
       <li>
         <div>
           <strong>Extract Principal Components</strong>
-          <span>Generate a handful of images for the target concept (e.g., "Bob Dylan") and its mapping concept (e.g., "a musician"). Run PCA on the token embeddings from each layer to find the low-dimensional subspaces that characterize each concept.</span>
+          <span>Generate a small number of sample images (typically 20–30) for the target concept (e.g., "Bob Dylan") and its mapping concept (e.g., "a musician"). Run PCA on the token embeddings from each layer to find the low-dimensional subspaces that characterize each concept.</span>
         </div>
       </li>
       <li>
@@ -564,7 +569,7 @@ s(X) = σ( α* · ( ‖(V*)ᵀ(X − β*)‖² − γ* ) )
     <h2>Results</h2>
 
     <p>
-      GLoCE is evaluated against six baselines — FMN, ESD-x, ESD-u, UCE, MACE, and RECE — across multiple tasks. The numbers speak clearly.
+      The experimental results demonstrate significant improvements across all evaluation metrics.
     </p>
 
     <div class="stats-row">
@@ -656,7 +661,7 @@ s(X) = σ( α* · ( ‖(V*)ᵀ(X − β*)‖² − γ* ) )
     </p>
 
     <p>
-      For anyone working on safe generative AI, content moderation, or machine unlearning, this paper is essential reading. And with a public GitHub repo, it's ready to build on.
+      For anyone working on safe generative AI, content moderation, or machine unlearning, this paper is essential reading. The authors also provide a public GitHub repository, enabling full reproducibility and practical implementation out of the box.
     </p>
 
     <div class="callout">
@@ -671,7 +676,7 @@ s(X) = σ( α* · ( ‖(V*)ᵀ(X − β*)‖² − γ* ) )
 <footer>
   <div class="container">
     <p>Written for ML for Remote Sensing — II · Spring 2025 (2025-2) · Seoul National University</p>
-    <p style="margin-top:0.5rem;">Paper: <em>Localized Concept Erasure for Text-to-Image Diffusion Models Using Training-Free Gated Low-Rank Adaptation</em> · Lee et al., CVPR 2025</p>
+    <p style="margin-top:0.5rem;">Paper: <em>Localized Concept Erasure for Text-to-Image Diffusion Models Using Training-Free Gated Low-Rank Adaptation</em> · Lee et al., CVPR 2024</p>
   </div>
 </footer>
 
