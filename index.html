@@ -1,824 +1,1186 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8"/>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Show, Attend and Tell — Blog</title>
-  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet"/>
-  <style>
-    :root {
-      --bg: #f7f4ee;
-      --surface: #ffffff;
-      --border: #e2ddd4;
-      --accent: #c0392b;
-      --accent-dim: #e74c3c;
-      --accent-light: #fdf0ef;
-      --text: #1a1714;
-      --text-muted: #6b6560;
-      --text-faint: #b0aa9f;
-      --ink: #2c2825;
-      --tag-bg: #f0ebe3;
-      --code-bg: #f2ede5;
-      --highlight: #fff8f7;
-    }
-
-    * { margin: 0; padding: 0; box-sizing: border-box; }
-
-    body {
-      background: var(--bg);
-      color: var(--text);
-      font-family: 'DM Sans', sans-serif;
-      font-weight: 300;
-      font-size: 18px;
-      line-height: 1.85;
-    }
-
-    .topbar {
-      background: var(--ink);
-      color: #c9b99a;
-      text-align: center;
-      padding: 0.6rem 1rem;
-      font-family: 'DM Mono', monospace;
-      font-size: 0.7rem;
-      letter-spacing: 0.2em;
-      text-transform: uppercase;
-    }
-
-    header {
-      background: var(--surface);
-      border-bottom: 1px solid var(--border);
-      padding: 1.5rem 0;
-    }
-
-    .container {
-      max-width: 760px;
-      margin: 0 auto;
-      padding: 0 2rem;
-    }
-
-    .header-inner {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-    }
-
-    .logo {
-      font-family: 'DM Serif Display', serif;
-      font-size: 1.3rem;
-      color: var(--ink);
-    }
-
-    .header-meta {
-      font-family: 'DM Mono', monospace;
-      font-size: 0.7rem;
-      letter-spacing: 0.15em;
-      color: var(--text-faint);
-      text-transform: uppercase;
-    }
-
-    .hero {
-      background: var(--surface);
-      padding: 4rem 0 3rem;
-      border-bottom: 1px solid var(--border);
-      animation: fadeIn 0.6s ease both;
-    }
-
-    .tag-row {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 0.5rem;
-      margin-bottom: 1.75rem;
-    }
-
-    .tag {
-      font-family: 'DM Mono', monospace;
-      font-size: 0.68rem;
-      letter-spacing: 0.12em;
-      text-transform: uppercase;
-      padding: 0.3rem 0.8rem;
-      border-radius: 2px;
-    }
-
-    .tag.red {
-      background: var(--accent-light);
-      color: var(--accent);
-      border: 1px solid #f5c6c3;
-    }
-
-    .tag.grey {
-      background: var(--tag-bg);
-      color: var(--text-muted);
-      border: 1px solid var(--border);
-    }
-
-    .hero h1 {
-      font-family: 'DM Serif Display', serif;
-      font-size: clamp(2.2rem, 5vw, 3.2rem);
-      line-height: 1.15;
-      color: var(--ink);
-      margin-bottom: 1.25rem;
-      letter-spacing: -0.02em;
-    }
-
-    .hero h1 em {
-      font-style: italic;
-      color: var(--accent);
-    }
-
-    .hero-sub {
-      font-size: 1.05rem;
-      color: var(--text-muted);
-      max-width: 600px;
-      margin-bottom: 2rem;
-      line-height: 1.65;
-    }
-
-    .byline {
-      display: flex;
-      align-items: center;
-      gap: 1rem;
-      padding-top: 1.5rem;
-      border-top: 1px solid var(--border);
-    }
-
-    .avatar {
-      width: 40px;
-      height: 40px;
-      background: var(--ink);
-      border-radius: 50%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-family: 'DM Mono', monospace;
-      font-size: 0.75rem;
-      color: #c9b99a;
-      flex-shrink: 0;
-    }
-
-    .byline-info strong {
-      display: block;
-      font-size: 0.9rem;
-      font-weight: 500;
-      color: var(--ink);
-    }
-
-    .byline-info span {
-      font-size: 0.8rem;
-      color: var(--text-faint);
-    }
-
-    .progress-bar {
-      position: fixed;
-      top: 0;
-      left: 0;
-      height: 3px;
-      background: var(--accent);
-      width: 0%;
-      z-index: 999;
-      transition: width 0.1s linear;
-    }
-
-    article {
-      padding: 3.5rem 0 5rem;
-      animation: fadeIn 0.6s 0.1s ease both;
-    }
-
-    article h2 {
-      font-family: 'DM Serif Display', serif;
-      font-size: 1.7rem;
-      color: var(--ink);
-      margin: 3rem 0 1rem;
-      line-height: 1.25;
-      padding-bottom: 0.5rem;
-      border-bottom: 2px solid var(--accent);
-      display: inline-block;
-    }
-
-    article h3 {
-      font-family: 'DM Mono', monospace;
-      font-weight: 500;
-      font-size: 0.8rem;
-      color: var(--accent);
-      margin: 2rem 0 0.6rem;
-      letter-spacing: 0.08em;
-      text-transform: uppercase;
-    }
-
-    article p {
-      margin-bottom: 1.4rem;
-      color: var(--ink);
-    }
-
-    article a {
-      color: var(--accent);
-      text-decoration: underline;
-      text-underline-offset: 3px;
-    }
-
-    hr.divider {
-      border: none;
-      border-top: 1px solid var(--border);
-      margin: 2.5rem 0;
-    }
-
-    .callout {
-      background: var(--accent-light);
-      border-left: 3px solid var(--accent);
-      padding: 1.25rem 1.5rem;
-      border-radius: 0 4px 4px 0;
-      margin: 2rem 0;
-      font-size: 0.95rem;
-    }
-
-    .callout-label {
-      font-family: 'DM Mono', monospace;
-      font-size: 0.68rem;
-      letter-spacing: 0.15em;
-      text-transform: uppercase;
-      color: var(--accent);
-      margin-bottom: 0.5rem;
-      display: block;
-    }
-
-    .infobox {
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: 6px;
-      padding: 1.5rem;
-      margin: 2rem 0;
-    }
-
-    .infobox-label {
-      font-family: 'DM Mono', monospace;
-      font-size: 0.68rem;
-      letter-spacing: 0.15em;
-      text-transform: uppercase;
-      color: var(--text-faint);
-      margin-bottom: 0.75rem;
-      display: block;
-    }
-
-    .steps {
-      list-style: none;
-      margin: 1.5rem 0;
-      counter-reset: step;
-    }
-
-    .steps li {
-      counter-increment: step;
-      display: flex;
-      gap: 1.25rem;
-      margin-bottom: 1.5rem;
-      align-items: flex-start;
-    }
-
-    .steps li::before {
-      content: counter(step);
-      flex-shrink: 0;
-      width: 2rem;
-      height: 2rem;
-      background: var(--ink);
-      color: #c9b99a;
-      border-radius: 4px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-family: 'DM Mono', monospace;
-      font-size: 0.78rem;
-      margin-top: 0.1rem;
-    }
-
-    .steps li strong {
-      display: block;
-      font-weight: 500;
-      color: var(--ink);
-      margin-bottom: 0.2rem;
-    }
-
-    .steps li span {
-      font-size: 0.92rem;
-      color: var(--text-muted);
-    }
-
-    .formula {
-      background: var(--code-bg);
-      border: 1px solid var(--border);
-      border-radius: 4px;
-      padding: 1.1rem 1.4rem;
-      font-family: 'DM Mono', monospace;
-      font-size: 0.82rem;
-      color: var(--ink);
-      margin: 1.25rem 0;
-      overflow-x: auto;
-      line-height: 1.8;
-    }
-
-    .stats-row {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 1rem;
-      margin: 2rem 0;
-    }
-
-    .stat-box {
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: 6px;
-      padding: 1.25rem;
-      text-align: center;
-    }
-
-    .stat-number {
-      font-family: 'DM Serif Display', serif;
-      font-size: 2rem;
-      color: var(--accent);
-      line-height: 1;
-      margin-bottom: 0.4rem;
-    }
-
-    .stat-label {
-      font-size: 0.75rem;
-      color: var(--text-muted);
-      line-height: 1.4;
-    }
-
-    .results-table {
-      width: 100%;
-      border-collapse: collapse;
-      font-size: 0.86rem;
-      margin: 1.5rem 0;
-    }
-
-    .results-table thead th {
-      font-family: 'DM Mono', monospace;
-      font-size: 0.68rem;
-      letter-spacing: 0.1em;
-      text-transform: uppercase;
-      color: var(--text-muted);
-      text-align: left;
-      padding: 0.7rem 0.9rem;
-      border-bottom: 2px solid var(--border);
-      background: var(--tag-bg);
-    }
-
-    .results-table tbody td {
-      padding: 0.65rem 0.9rem;
-      border-bottom: 1px solid var(--border);
-      color: var(--ink);
-    }
-
-    .results-table tbody tr:last-child td {
-      border-bottom: none;
-    }
-
-    .results-table tbody tr.winner td {
-      background: var(--accent-light);
-      color: var(--accent);
-      font-weight: 500;
-    }
-
-    .results-table tbody tr:hover:not(.winner) td {
-      background: var(--tag-bg);
-    }
-
-    .pro-con {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 1rem;
-      margin: 1.5rem 0;
-    }
-
-    .pro-con-box {
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: 6px;
-      padding: 1.25rem;
-    }
-
-    .pro-con-box h4 {
-      font-family: 'DM Mono', monospace;
-      font-size: 0.7rem;
-      letter-spacing: 0.15em;
-      text-transform: uppercase;
-      margin-bottom: 0.75rem;
-    }
-
-    .pro-con-box.pros h4 { color: #27ae60; }
-    .pro-con-box.cons h4 { color: #c0392b; }
-
-    .pro-con-box ul {
-      list-style: none;
-      font-size: 0.88rem;
-      color: var(--text-muted);
-    }
-
-    .pro-con-box ul li {
-      margin-bottom: 0.5rem;
-      padding-left: 1.4rem;
-      position: relative;
-      line-height: 1.45;
-    }
-
-    .pro-con-box.pros li::before { content: '+'; position: absolute; left: 0; color: #27ae60; font-weight: 700; }
-    .pro-con-box.cons li::before { content: '−'; position: absolute; left: 0; color: #c0392b; font-weight: 700; }
-
-    .attention-demo {
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: 6px;
-      padding: 1.5rem;
-      margin: 2rem 0;
-      text-align: center;
-    }
-
-    .attention-demo-label {
-      font-family: 'DM Mono', monospace;
-      font-size: 0.68rem;
-      letter-spacing: 0.15em;
-      text-transform: uppercase;
-      color: var(--text-faint);
-      margin-bottom: 1.25rem;
-      display: block;
-    }
-
-    .pipeline {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      flex-wrap: wrap;
-      gap: 0.5rem;
-    }
-
-    .pipe-box {
-      background: var(--tag-bg);
-      border: 1px solid var(--border);
-      border-radius: 6px;
-      padding: 0.75rem 1rem;
-      font-size: 0.78rem;
-      font-family: 'DM Mono', monospace;
-      color: var(--ink);
-      text-align: center;
-      min-width: 100px;
-    }
-
-    .pipe-box.highlight {
-      background: var(--accent-light);
-      border-color: #f5c6c3;
-      color: var(--accent);
-    }
-
-    .pipe-arrow {
-      color: var(--text-faint);
-      font-size: 1.1rem;
-      flex-shrink: 0;
-    }
-
-    footer {
-      background: var(--ink);
-      color: #8a7d6e;
-      padding: 2.5rem 0;
-      text-align: center;
-      font-size: 0.82rem;
-      line-height: 1.8;
-    }
-
-    footer a { color: #c9b99a; text-decoration: none; }
-    footer a:hover { text-decoration: underline; }
-
-    @keyframes fadeIn {
-      from { opacity: 0; transform: translateY(16px); }
-      to   { opacity: 1; transform: translateY(0); }
-    }
-
-    @media (max-width: 600px) {
-      .stats-row { grid-template-columns: 1fr 1fr; }
-      .pro-con { grid-template-columns: 1fr; }
-      .header-meta { display: none; }
-      body { font-size: 16px; }
-      .pipeline { flex-direction: column; }
-      .pipe-arrow { transform: rotate(90deg); }
-    }
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CutMix: Slicing Through the State of the Art</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Serif+Display:ital@0;1&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --ink: #0f0e0d;
+    --paper: #f5f0e8;
+    --accent: #d94f2b;
+    --accent2: #2b6dd9;
+    --muted: #7a7268;
+    --rule: #c8c0b0;
+    --code-bg: #1a1916;
+    --code-text: #e8dfc8;
+    --highlight: #ffd166;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    background: var(--paper);
+    color: var(--ink);
+    font-family: 'DM Sans', sans-serif;
+    font-weight: 300;
+    line-height: 1.75;
+    font-size: 18px;
+    overflow-x: hidden;
+  }
+
+  /* Grain overlay */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");
+    pointer-events: none;
+    z-index: 9999;
+    opacity: 0.4;
+  }
+
+  /* ── MASTHEAD ── */
+  .masthead {
+    border-bottom: 3px solid var(--ink);
+    padding: 1rem 2rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: sticky;
+    top: 0;
+    background: var(--paper);
+    z-index: 100;
+  }
+  .masthead-title {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 1.4rem;
+    letter-spacing: 0.12em;
+    color: var(--ink);
+  }
+  .masthead-tag {
+    font-size: 0.75rem;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--muted);
+    font-weight: 500;
+  }
+
+  /* ── HERO ── */
+  .hero {
+    min-height: 92vh;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    border-bottom: 3px solid var(--ink);
+    overflow: hidden;
+  }
+  .hero-left {
+    padding: 5rem 4rem 5rem 6rem;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    border-right: 3px solid var(--ink);
+    position: relative;
+  }
+  .hero-eyebrow {
+    font-size: 0.72rem;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    font-weight: 500;
+    color: var(--accent);
+    margin-bottom: 1.5rem;
+    display: flex;
+    align-items: center;
+    gap: 0.8rem;
+  }
+  .hero-eyebrow::before {
+    content: '';
+    display: inline-block;
+    width: 2rem;
+    height: 2px;
+    background: var(--accent);
+  }
+  .hero-title {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: clamp(4rem, 7vw, 7.5rem);
+    line-height: 0.92;
+    letter-spacing: 0.02em;
+    color: var(--ink);
+    margin-bottom: 1.5rem;
+  }
+  .hero-title .highlight-word {
+    color: var(--accent);
+    -webkit-text-stroke: 0px;
+  }
+  .hero-subtitle {
+    font-family: 'DM Serif Display', serif;
+    font-style: italic;
+    font-size: 1.35rem;
+    color: var(--muted);
+    max-width: 38ch;
+    margin-bottom: 2.5rem;
+    line-height: 1.5;
+  }
+  .meta-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.6rem;
+  }
+  .chip {
+    padding: 0.3rem 0.9rem;
+    border: 1.5px solid var(--ink);
+    font-size: 0.72rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    font-weight: 500;
+    border-radius: 2px;
+  }
+  .chip.filled {
+    background: var(--ink);
+    color: var(--paper);
+  }
+  .chip.accent {
+    background: var(--accent);
+    color: white;
+    border-color: var(--accent);
+  }
+
+  .hero-right {
+    display: grid;
+    grid-template-rows: 1fr 1fr;
+    position: relative;
+  }
+  .hero-visual-top {
+    border-bottom: 3px solid var(--ink);
+    background: var(--ink);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    overflow: hidden;
+    padding: 2rem;
+  }
+  .cutmix-demo {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 3px;
+    width: 280px;
+    height: 200px;
+    animation: pulse-demo 3s ease-in-out infinite;
+  }
+  @keyframes pulse-demo { 0%,100%{transform:scale(1)} 50%{transform:scale(1.03)} }
+  .demo-cell {
+    border-radius: 2px;
+    position: relative;
+    overflow: hidden;
+  }
+  .cell-a { background: linear-gradient(135deg, #e63946 0%, #a8031a 100%); }
+  .cell-b { background: linear-gradient(135deg, #457b9d 0%, #1d3557 100%); }
+  .cell-c { background: linear-gradient(135deg, #2a9d8f 0%, #264653 100%); }
+  .cell-d-top { background: linear-gradient(135deg, #457b9d 0%, #1d3557 100%); height: 55%; }
+  .cell-d-bottom { background: linear-gradient(135deg, #e63946 0%, #a8031a 100%); height: 45%; }
+  .cell-d { display: flex; flex-direction: column; }
+  .demo-cell::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: repeating-linear-gradient(
+      45deg,
+      transparent,
+      transparent 4px,
+      rgba(255,255,255,0.05) 4px,
+      rgba(255,255,255,0.05) 5px
+    );
+  }
+  .demo-label {
+    position: absolute;
+    bottom: 0.8rem;
+    left: 50%;
+    transform: translateX(-50%);
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 0.7rem;
+    letter-spacing: 0.15em;
+    color: rgba(255,255,255,0.6);
+  }
+
+  .hero-visual-bottom {
+    background: var(--accent);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    gap: 0.5rem;
+    padding: 2rem;
+  }
+  .big-stat {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 5rem;
+    color: white;
+    line-height: 1;
+  }
+  .stat-label {
+    font-size: 0.72rem;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: rgba(255,255,255,0.75);
+    font-weight: 500;
+    text-align: center;
+  }
+
+  /* ── ARTICLE BODY ── */
+  .article {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 2rem;
+  }
+
+  .section {
+    display: grid;
+    grid-template-columns: 220px 1fr;
+    gap: 4rem;
+    padding: 5rem 0;
+    border-bottom: 1.5px solid var(--rule);
+    animation: fadeUp 0.6s ease both;
+    animation-timeline: view();
+    animation-range: entry 0% entry 30%;
+  }
+
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(30px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  .section-label {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    padding-top: 0.3rem;
+  }
+  .section-num {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 4rem;
+    line-height: 1;
+    color: var(--rule);
+  }
+  .section-name {
+    font-size: 0.68rem;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    font-weight: 500;
+    color: var(--muted);
+    writing-mode: vertical-lr;
+    text-orientation: mixed;
+    transform: rotate(180deg);
+    align-self: flex-start;
+    margin-top: 0.5rem;
+  }
+
+  .section-body h2 {
+    font-family: 'DM Serif Display', serif;
+    font-size: 2.4rem;
+    line-height: 1.2;
+    margin-bottom: 1.5rem;
+    color: var(--ink);
+  }
+  .section-body h3 {
+    font-family: 'DM Serif Display', serif;
+    font-size: 1.5rem;
+    margin-top: 2.5rem;
+    margin-bottom: 0.8rem;
+    color: var(--ink);
+  }
+  .section-body p {
+    margin-bottom: 1.2rem;
+    color: #2a2520;
+  }
+  .section-body strong {
+    font-weight: 500;
+    color: var(--ink);
+  }
+  .section-body em {
+    font-family: 'DM Serif Display', serif;
+    font-style: italic;
+    font-size: 1.05em;
+  }
+
+  /* Pull quote */
+  .pullquote {
+    margin: 2.5rem 0;
+    padding: 2rem 2.5rem;
+    border-left: 5px solid var(--accent);
+    background: rgba(217, 79, 43, 0.06);
+    font-family: 'DM Serif Display', serif;
+    font-size: 1.45rem;
+    line-height: 1.45;
+    font-style: italic;
+    color: var(--ink);
+    position: relative;
+  }
+  .pullquote::before {
+    content: '\201C';
+    font-size: 5rem;
+    color: var(--accent);
+    opacity: 0.25;
+    position: absolute;
+    top: -0.5rem;
+    left: 1rem;
+    line-height: 1;
+    font-family: Georgia, serif;
+  }
+
+  /* Inline highlight */
+  mark {
+    background: var(--highlight);
+    padding: 0.1em 0.3em;
+    border-radius: 2px;
+    font-style: normal;
+    color: var(--ink);
+  }
+
+  /* Code block */
+  pre {
+    background: var(--code-bg);
+    color: var(--code-text);
+    padding: 1.8rem 2rem;
+    border-radius: 4px;
+    overflow-x: auto;
+    font-family: 'Courier New', monospace;
+    font-size: 0.82rem;
+    line-height: 1.65;
+    margin: 2rem 0;
+    border: 1px solid rgba(255,255,255,0.06);
+    position: relative;
+  }
+  pre::before {
+    content: attr(data-lang);
+    position: absolute;
+    top: 0.7rem;
+    right: 1rem;
+    font-size: 0.62rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--accent);
+    font-family: 'DM Sans', sans-serif;
+    font-weight: 500;
+  }
+  code { font-family: 'Courier New', monospace; font-size: 0.88em; }
+  p code, li code {
+    background: rgba(0,0,0,0.07);
+    padding: 0.1em 0.4em;
+    border-radius: 3px;
+  }
+
+  /* Results table */
+  .results-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 2rem 0;
+    font-size: 0.9rem;
+  }
+  .results-table thead tr {
+    background: var(--ink);
+    color: var(--paper);
+  }
+  .results-table th {
+    padding: 0.9rem 1.1rem;
+    text-align: left;
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 0.85rem;
+    letter-spacing: 0.1em;
+    font-weight: normal;
+  }
+  .results-table td {
+    padding: 0.75rem 1.1rem;
+    border-bottom: 1px solid var(--rule);
+  }
+  .results-table tr:last-child td { border-bottom: none; }
+  .results-table tr:nth-child(even) td { background: rgba(0,0,0,0.025); }
+  .results-table tr.winner td {
+    background: rgba(217, 79, 43, 0.08);
+    font-weight: 500;
+  }
+  .results-table tr.winner td:first-child {
+    border-left: 3px solid var(--accent);
+  }
+  .badge {
+    display: inline-block;
+    background: var(--accent);
+    color: white;
+    font-size: 0.62rem;
+    font-weight: 500;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    padding: 0.15em 0.5em;
+    border-radius: 2px;
+    margin-left: 0.4rem;
+    vertical-align: middle;
+  }
+
+  /* Comparison cards */
+  .comparison-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1.5px;
+    margin: 2rem 0;
+    border: 1.5px solid var(--ink);
+    overflow: hidden;
+    border-radius: 4px;
+  }
+  .cmp-card {
+    padding: 1.8rem;
+    background: var(--paper);
+    border-right: 1.5px solid var(--rule);
+    transition: background 0.2s;
+  }
+  .cmp-card:last-child { border-right: none; }
+  .cmp-card.active { background: var(--ink); color: var(--paper); }
+  .cmp-card.active .cmp-name { color: var(--accent); }
+  .cmp-card.active .cmp-body { color: rgba(245,240,232,0.75); }
+  .cmp-name {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 1.5rem;
+    letter-spacing: 0.05em;
+    margin-bottom: 0.5rem;
+    color: var(--ink);
+  }
+  .cmp-card.active .cmp-name { color: var(--highlight); }
+  .cmp-desc {
+    font-size: 0.78rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--muted);
+    font-weight: 500;
+    margin-bottom: 0.8rem;
+  }
+  .cmp-card.active .cmp-desc { color: rgba(245,240,232,0.5); }
+  .cmp-body { font-size: 0.88rem; line-height: 1.6; color: #3a352e; }
+
+  /* Algorithm box */
+  .algo-box {
+    background: var(--ink);
+    color: var(--paper);
+    padding: 2.5rem;
+    border-radius: 4px;
+    margin: 2rem 0;
+  }
+  .algo-box h4 {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 1.2rem;
+    letter-spacing: 0.1em;
+    color: var(--highlight);
+    margin-bottom: 1.2rem;
+    padding-bottom: 0.8rem;
+    border-bottom: 1px solid rgba(255,255,255,0.1);
+  }
+  .algo-step {
+    display: flex;
+    gap: 1rem;
+    margin-bottom: 0.9rem;
+    font-size: 0.92rem;
+    line-height: 1.55;
+  }
+  .algo-num {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 1.1rem;
+    color: var(--accent);
+    min-width: 1.8rem;
+    line-height: 1.4;
+  }
+  .algo-text { color: rgba(245,240,232,0.82); }
+  .algo-text code { color: var(--highlight); background: rgba(255,255,255,0.08); padding: 0.1em 0.4em; border-radius: 2px; }
+  .algo-text em { color: rgba(245,240,232,0.55); font-style: normal; font-size: 0.88em; }
+
+  /* Critical analysis list */
+  .analysis-list {
+    list-style: none;
+    margin: 1.5rem 0;
+  }
+  .analysis-list li {
+    padding: 1.2rem 1.5rem;
+    margin-bottom: 0.8rem;
+    border-left: 3px solid var(--rule);
+    font-size: 0.94rem;
+    line-height: 1.65;
+    background: rgba(0,0,0,0.02);
+  }
+  .analysis-list li.pro { border-left-color: #2a9d8f; }
+  .analysis-list li.con { border-left-color: var(--accent); }
+  .analysis-list li strong {
+    display: block;
+    margin-bottom: 0.3rem;
+    font-size: 0.78rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+  }
+  .analysis-list li.pro strong { color: #2a9d8f; }
+  .analysis-list li.con strong { color: var(--accent); }
+
+  /* Bar chart */
+  .bar-chart {
+    margin: 2rem 0;
+  }
+  .bar-row {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 0.9rem;
+  }
+  .bar-name {
+    font-size: 0.8rem;
+    font-weight: 500;
+    width: 200px;
+    flex-shrink: 0;
+    letter-spacing: 0.02em;
+  }
+  .bar-track {
+    flex: 1;
+    height: 28px;
+    background: rgba(0,0,0,0.06);
+    border-radius: 2px;
+    overflow: hidden;
+    position: relative;
+  }
+  .bar-fill {
+    height: 100%;
+    border-radius: 2px;
+    background: var(--muted);
+    transition: width 1.2s cubic-bezier(0.16, 1, 0.3, 1);
+    position: relative;
+  }
+  .bar-fill.best { background: var(--accent); }
+  .bar-val {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 1rem;
+    width: 60px;
+    text-align: right;
+    color: var(--muted);
+    flex-shrink: 0;
+  }
+  .bar-val.best { color: var(--accent); }
+  .bar-note {
+    font-size: 0.72rem;
+    color: var(--muted);
+    margin-bottom: 0.4rem;
+    letter-spacing: 0.05em;
+  }
+
+  /* Formula */
+  .formula {
+    text-align: center;
+    padding: 2rem;
+    background: rgba(0,0,0,0.04);
+    border: 1px solid var(--rule);
+    border-radius: 4px;
+    margin: 2rem 0;
+    font-family: Georgia, serif;
+    font-size: 1.15rem;
+    color: var(--ink);
+    letter-spacing: 0.03em;
+  }
+  .formula .eq-label {
+    display: block;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.72rem;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--muted);
+    font-weight: 500;
+    margin-bottom: 0.8rem;
+  }
+
+  /* Suggestion cards */
+  .suggestion-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+    margin: 2rem 0;
+  }
+  .sug-card {
+    padding: 1.8rem;
+    border: 1.5px solid var(--rule);
+    border-radius: 4px;
+    position: relative;
+    overflow: hidden;
+    transition: border-color 0.2s, transform 0.2s;
+  }
+  .sug-card:hover { border-color: var(--accent); transform: translateY(-2px); }
+  .sug-num {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 3rem;
+    line-height: 1;
+    color: var(--rule);
+    position: absolute;
+    top: 0.8rem;
+    right: 1rem;
+  }
+  .sug-title {
+    font-family: 'DM Serif Display', serif;
+    font-size: 1.15rem;
+    margin-bottom: 0.6rem;
+    color: var(--ink);
+    max-width: 85%;
+  }
+  .sug-body { font-size: 0.88rem; line-height: 1.6; color: #3a352e; }
+
+  /* Footer */
+  footer {
+    background: var(--ink);
+    color: var(--paper);
+    padding: 4rem 6rem;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 4rem;
+    margin-top: 4rem;
+  }
+  footer h3 {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 1.8rem;
+    letter-spacing: 0.05em;
+    color: var(--highlight);
+    margin-bottom: 1.2rem;
+  }
+  footer p { font-size: 0.9rem; color: rgba(245,240,232,0.65); line-height: 1.7; margin-bottom: 0.8rem; }
+  footer a { color: var(--accent); text-decoration: none; }
+  footer a:hover { text-decoration: underline; }
+  .footer-cite {
+    font-family: 'Courier New', monospace;
+    font-size: 0.78rem;
+    color: rgba(245,240,232,0.45);
+    background: rgba(255,255,255,0.04);
+    padding: 1.2rem;
+    border-radius: 4px;
+    line-height: 1.7;
+    border-left: 3px solid var(--accent);
+  }
+  .footer-bottom {
+    border-top: 1px solid rgba(255,255,255,0.1);
+    padding: 1.5rem 6rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: var(--ink);
+  }
+  .footer-bottom p { font-size: 0.78rem; color: rgba(245,240,232,0.35); margin: 0; }
+
+  /* Scroll progress */
+  .progress-bar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    height: 3px;
+    background: var(--accent);
+    z-index: 1000;
+    width: 0%;
+    transition: width 0.1s linear;
+  }
+
+  /* Responsive */
+  @media (max-width: 900px) {
+    .hero { grid-template-columns: 1fr; min-height: auto; }
+    .hero-left { padding: 4rem 2rem 3rem; border-right: none; border-bottom: 3px solid var(--ink); }
+    .hero-right { grid-template-rows: 250px 180px; }
+    .hero-visual-top { border-right: none; }
+    .section { grid-template-columns: 1fr; gap: 1.5rem; padding: 3rem 0; }
+    .section-label { flex-direction: row; align-items: center; }
+    .section-name { writing-mode: horizontal-tb; transform: none; }
+    .comparison-grid { grid-template-columns: 1fr; }
+    .suggestion-grid { grid-template-columns: 1fr; }
+    footer { grid-template-columns: 1fr; padding: 3rem 2rem; }
+    .footer-bottom { padding: 1.5rem 2rem; flex-direction: column; gap: 0.5rem; text-align: center; }
+    .article { padding: 0 1.2rem; }
+    .masthead { padding: 1rem; }
+    pre { font-size: 0.74rem; padding: 1.2rem; }
+    .bar-name { width: 130px; font-size: 0.72rem; }
+  }
+</style>
 </head>
 <body>
 
-<div class="progress-bar" id="progress"></div>
+<div class="progress-bar" id="progressBar"></div>
 
-<div class="topbar">ML for Remote Sensing &nbsp;·&nbsp; Spring 2025-2 &nbsp;·&nbsp; Blog Assignment</div>
-
-<header>
-  <div class="container">
-    <div class="header-inner">
-      <span class="logo">Paper Review</span>
-      <span class="header-meta">ICML 2015 &nbsp;·&nbsp; Image Captioning</span>
-    </div>
-  </div>
+<!-- MASTHEAD -->
+<header class="masthead">
+  <span class="masthead-title">Deep Learning · Paper Review</span>
+  <span class="masthead-tag">ICCV 2019 &nbsp;·&nbsp; Oral Presentation</span>
 </header>
 
-<div class="hero">
-  <div class="container">
-    <div class="tag-row">
-      <span class="tag red">ICML 2015</span>
-      <span class="tag grey">Visual Attention</span>
-      <span class="tag grey">Image Captioning</span>
-      <span class="tag grey">LSTM</span>
-      <span class="tag grey">CNN + RNN</span>
+<!-- HERO -->
+<section class="hero">
+  <div class="hero-left">
+    <div class="hero-eyebrow">Data Augmentation</div>
+    <h1 class="hero-title">
+      Cut<span class="highlight-word">Mix</span>
+    </h1>
+    <p class="hero-subtitle">Regularization Strategy to Train Strong Classifiers with Localizable Features</p>
+    <div class="meta-chips">
+      <span class="chip filled">ICCV 2019 Oral</span>
+      <span class="chip accent">NAVER Clova AI</span>
+      <span class="chip">Image Classification</span>
+      <span class="chip">PyTorch</span>
     </div>
+  </div>
+  <div class="hero-right">
+    <div class="hero-visual-top">
+      <div style="text-align:center;">
+        <div class="cutmix-demo">
+          <div class="demo-cell cell-a"></div>
+          <div class="demo-cell cell-b"></div>
+          <div class="demo-cell cell-c"></div>
+          <div class="demo-cell cell-d">
+            <div class="cell-d-top"></div>
+            <div class="cell-d-bottom"></div>
+          </div>
+        </div>
+        <div class="demo-label">CutMix in action</div>
+      </div>
+    </div>
+    <div class="hero-visual-bottom">
+      <span class="big-stat">−2.28%</span>
+      <span class="stat-label">Top-1 Error Reduction<br>over baseline ResNet-50</span>
+    </div>
+  </div>
+</section>
 
-    <h1>Teaching Machines to <em>Look</em> Before They Speak</h1>
+<!-- ARTICLE -->
+<main class="article">
 
-    <p class="hero-sub">
-      A deep dive into <strong>Show, Attend and Tell</strong> (Xu et al., ICML 2015) — the landmark paper that gave neural image captioning models the ability to focus on what matters, one word at a time.
-    </p>
+  <!-- § 1 — THE PROBLEM -->
+  <div class="section">
+    <div class="section-label">
+      <span class="section-num">01</span>
+      <span class="section-name">Problem Statement</span>
+    </div>
+    <div class="section-body">
+      <h2>The Problem: Wasted Pixels & Lazy Models</h2>
+      <p>
+        Modern convolutional neural networks are surprisingly bad learners — they cheat. Given a dataset of birds, a model might learn to fire purely on the bird's beak, completely ignoring the wings, body, and context. This over-reliance on a few <em>discriminative shortcuts</em> makes models brittle: they fail under occlusion, adversarial perturbations, and distribution shifts.
+      </p>
+      <p>
+        Prior work tackled this through <strong>regional dropout</strong>: randomly masking out patches of the input image, forcing the model to use other regions for classification. Techniques like <strong>Cutout</strong> (DeVries & Taylor, 2017) and <strong>DropBlock</strong> (Ghiasi et al., 2018) showed that this regularization genuinely improves generalization.
+      </p>
+      <div class="pullquote">
+        But here's the fundamental flaw: erasing pixels destroys training signal. A black rectangle tells the model nothing — it is pure information loss. You're paying a regularization cost with training efficiency.
+      </div>
+      <p>
+        The challenge is clear: <mark>can we force models to look at the full object without throwing away pixels?</mark> CutMix answers with an elegant yes.
+      </p>
 
-    <div class="byline">
-      <div class="avatar">ML</div>
-      <div class="byline-info">
-        <strong>Machine Learning for Remote Sensing — II</strong>
-        <span>Spring 2025-2 · Group Blog Assignment · IIT Bombay</span>
+      <h3>Why It Matters</h3>
+      <p>
+        ImageNet pre-trained features are the backbone of the entire computer vision ecosystem. Models trained for classification are then fine-tuned for detection, segmentation, captioning, and beyond. If pre-training produces lazily localized features, that weakness cascades through every downstream application.
+      </p>
+    </div>
+  </div>
+
+  <!-- § 2 — APPROACH -->
+  <div class="section">
+    <div class="section-label">
+      <span class="section-num">02</span>
+      <span class="section-name">The Approach</span>
+    </div>
+    <div class="section-body">
+      <h2>The CutMix Strategy</h2>
+      <p>
+        CutMix belongs to a family of <em>sample-mixing</em> augmentations but operates in image space rather than feature space. The idea is disarmingly simple: cut a rectangular region from one training image and paste it onto another. Crucially, the ground-truth label is also mixed in proportion to the pixel areas contributed by each image.
+      </p>
+
+      <div class="comparison-grid">
+        <div class="cmp-card">
+          <div class="cmp-name">Cutout</div>
+          <div class="cmp-desc">DeVries & Taylor, 2017</div>
+          <p class="cmp-body">Zeros out a rectangular region. Forces attention to periphery. <strong>Wastes pixels</strong> — the masked area contributes nothing to training.</p>
+        </div>
+        <div class="cmp-card">
+          <div class="cmp-name">Mixup</div>
+          <div class="cmp-desc">Zhang et al., ICLR 2018</div>
+          <p class="cmp-body">Blends two images pixel-wise. Mixes labels proportionally. Produces <strong>unnatural, ghost-like images</strong> that never appear in the real world.</p>
+        </div>
+        <div class="cmp-card active">
+          <div class="cmp-name">CutMix</div>
+          <div class="cmp-desc">Yun et al., ICCV 2019</div>
+          <p class="cmp-body">Pastes a cut patch from image B into image A. Both contribute real pixels. Labels mixed by area ratio. <strong>No wasted information.</strong></p>
+        </div>
+      </div>
+
+      <h3>The Algorithm</h3>
+      <div class="algo-box">
+        <h4>Algorithm: CutMix Training Step</h4>
+        <div class="algo-step">
+          <span class="algo-num">1</span>
+          <span class="algo-text">Sample mixing ratio <code>λ ~ Beta(α, α)</code> <em>(typically α = 1.0)</em></span>
+        </div>
+        <div class="algo-step">
+          <span class="algo-num">2</span>
+          <span class="algo-text">Select a random second image from the batch: <code>x_B = x[rand_index]</code></span>
+        </div>
+        <div class="algo-step">
+          <span class="algo-num">3</span>
+          <span class="algo-text">Compute bounding box dimensions: <code>cut_w = W × √(1−λ)</code>, <code>cut_h = H × √(1−λ)</code></span>
+        </div>
+        <div class="algo-step">
+          <span class="algo-num">4</span>
+          <span class="algo-text">Sample center uniformly: <code>(cx, cy) ~ Uniform(W, H)</code>. Clip to image boundaries.</span>
+        </div>
+        <div class="algo-step">
+          <span class="algo-num">5</span>
+          <span class="algo-text">Paste: <code>x_A[:, :, bbx1:bbx2, bby1:bby2] = x_B[:, :, bbx1:bbx2, bby1:bby2]</code></span>
+        </div>
+        <div class="algo-step">
+          <span class="algo-num">6</span>
+          <span class="algo-text">Recompute λ from actual pixel ratio. Train with: <code>loss = λ × CE(ŷ, y_A) + (1−λ) × CE(ŷ, y_B)</code></span>
+        </div>
+      </div>
+
+      <div class="formula">
+        <span class="eq-label">Mixed Label</span>
+        ỹ = λ · y<sub>A</sub> + (1 − λ) · y<sub>B</sub><br><br>
+        <span class="eq-label">Mixed Input</span>
+        x̃ = <strong>M</strong> ⊙ x<sub>A</sub> + (<strong>1</strong> − <strong>M</strong>) ⊙ x<sub>B</sub>
+      </div>
+
+      <p>
+        where <strong>M</strong> is a binary mask with 1s inside the bounding box region. Unlike Mixup which operates globally, CutMix's spatial locality means both images remain <em>recognizable</em> in their respective regions — the model learns to classify two real things co-existing in one image.
+      </p>
+
+      <h3>Implementation Highlight</h3>
+      <p>The core of CutMix in PyTorch is just a dozen lines inside the training loop:</p>
+      <pre data-lang="Python"><code>r = np.random.rand(1)
+if args.beta > 0 and r < args.cutmix_prob:
+    lam = np.random.beta(args.beta, args.beta)
+    rand_index = torch.randperm(input.size()[0]).cuda()
+    target_a = target
+    target_b = target[rand_index]
+    bbx1, bby1, bbx2, bby2 = rand_bbox(input.size(), lam)
+    input[:, :, bbx1:bbx2, bby1:bby2] = input[rand_index, :, bbx1:bbx2, bby1:bby2]
+    # Recompute lam from actual pixel ratio
+    lam = 1 - ((bbx2 - bbx1) * (bby2 - bby1) / (input.size()[-1] * input.size()[-2]))
+    output = model(input)
+    loss = criterion(output, target_a) * lam + criterion(output, target_b) * (1. - lam)</code></pre>
+
+      <p>The bounding box is generated by sampling a center and computing dimensions from <code>λ</code>:</p>
+      <pre data-lang="Python"><code>def rand_bbox(size, lam):
+    W, H = size[2], size[3]
+    cut_rat = np.sqrt(1. - lam)
+    cut_w, cut_h = int(W * cut_rat), int(H * cut_rat)
+    cx, cy = np.random.randint(W), np.random.randint(H)
+    bbx1 = np.clip(cx - cut_w // 2, 0, W)
+    bby1 = np.clip(cy - cut_h // 2, 0, H)
+    bbx2 = np.clip(cx + cut_w // 2, 0, W)
+    bby2 = np.clip(cy + cut_h // 2, 0, H)
+    return bbx1, bby1, bbx2, bby2</code></pre>
+    </div>
+  </div>
+
+  <!-- § 3 — RESULTS -->
+  <div class="section">
+    <div class="section-label">
+      <span class="section-num">03</span>
+      <span class="section-name">Results</span>
+    </div>
+    <div class="section-body">
+      <h2>Results &amp; Comparisons</h2>
+
+      <h3>CIFAR-100 — PyramidNet-200 Backbone</h3>
+      <p class="bar-note">Top-1 Error (%) — lower is better</p>
+      <div class="bar-chart" id="cifarChart">
+        <div class="bar-row">
+          <span class="bar-name">Baseline</span>
+          <div class="bar-track"><div class="bar-fill" style="width:100%" data-val="16.45"></div></div>
+          <span class="bar-val">16.45%</span>
+        </div>
+        <div class="bar-row">
+          <span class="bar-name">+ Cutout</span>
+          <div class="bar-track"><div class="bar-fill" style="width:100%" data-val="16.53"></div></div>
+          <span class="bar-val">16.53%</span>
+        </div>
+        <div class="bar-row">
+          <span class="bar-name">+ Mixup</span>
+          <div class="bar-track"><div class="bar-fill" style="width:96%" data-val="15.63"></div></div>
+          <span class="bar-val">15.63%</span>
+        </div>
+        <div class="bar-row">
+          <span class="bar-name">+ DropBlock</span>
+          <div class="bar-track"><div class="bar-fill" style="width:96%" data-val="15.73"></div></div>
+          <span class="bar-val">15.73%</span>
+        </div>
+        <div class="bar-row">
+          <span class="bar-name">+ CutMix ★</span>
+          <div class="bar-track"><div class="bar-fill best" style="width:86%" data-val="14.23"></div></div>
+          <span class="bar-val best">14.23%</span>
+        </div>
+      </div>
+
+      <h3>ImageNet — ResNet-50 Backbone</h3>
+      <table class="results-table">
+        <thead>
+          <tr>
+            <th>Method</th>
+            <th>Top-1 Error</th>
+            <th>Top-5 Error (approx)</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>ResNet-50 (Baseline)</td>
+            <td>23.68%</td>
+            <td>~6.9%</td>
+          </tr>
+          <tr>
+            <td>+ Mixup</td>
+            <td>22.58%</td>
+            <td>~6.4%</td>
+          </tr>
+          <tr>
+            <td>+ Cutout</td>
+            <td>22.93%</td>
+            <td>~6.5%</td>
+          </tr>
+          <tr>
+            <td>+ AutoAugment*</td>
+            <td>22.40%</td>
+            <td>—</td>
+          </tr>
+          <tr>
+            <td>+ DropBlock*</td>
+            <td>21.87%</td>
+            <td>—</td>
+          </tr>
+          <tr class="winner">
+            <td>+ CutMix <span class="badge">Best</span></td>
+            <td>21.40%</td>
+            <td>~5.9%</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <h3>Transfer Learning — The Real Test</h3>
+      <p>
+        Classification numbers alone can be misleading. The true value of pre-trained features shows when they're transferred. CutMix shines:
+      </p>
+      <table class="results-table">
+        <thead>
+          <tr>
+            <th>Backbone</th>
+            <th>Detection SSD (mAP)</th>
+            <th>Faster-RCNN (mAP)</th>
+            <th>Captioning (BLEU-4)</th>
+            <th>Localization (%)</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td>ResNet50</td><td>76.7</td><td>75.6</td><td>22.9</td><td>46.3</td></tr>
+          <tr><td>+ Mixup</td><td>76.6</td><td>73.9</td><td>23.2</td><td>45.84</td></tr>
+          <tr><td>+ Cutout</td><td>76.8</td><td>75.0</td><td>24.0</td><td>46.69</td></tr>
+          <tr class="winner"><td>+ CutMix <span class="badge">Best</span></td><td>77.6</td><td>76.7</td><td>24.9</td><td>46.25</td></tr>
+        </tbody>
+      </table>
+      <p>
+        Notably, <strong>Mixup actually hurts Faster-RCNN mAP</strong> (75.6 → 73.9) despite improving classification. CutMix is the only method that <em>consistently improves across every benchmark</em>, suggesting it produces genuinely more transferable spatial features.
+      </p>
+    </div>
+  </div>
+
+  <!-- § 4 — CRITICAL ANALYSIS -->
+  <div class="section">
+    <div class="section-label">
+      <span class="section-num">04</span>
+      <span class="section-name">Critical Analysis</span>
+    </div>
+    <div class="section-body">
+      <h2>Critical Analysis</h2>
+      <p>
+        CutMix is a genuinely impactful paper, but like all empirical deep learning work, it deserves scrutiny beyond the headline numbers.
+      </p>
+
+      <ul class="analysis-list">
+        <li class="pro">
+          <strong>✓ Strength: Zero computational overhead</strong>
+          CutMix adds no parameters and runs as a NumPy/CUDA operation in the data pipeline. The additional cost is negligible compared to the forward/backward pass.
+        </li>
+        <li class="pro">
+          <strong>✓ Strength: Spatially coherent augmentation</strong>
+          Unlike Mixup's ghosting artifacts, CutMix produces images that look like a real photograph where one object was physically placed over another — much closer to the natural distribution of partially occluded objects in the real world.
+        </li>
+        <li class="pro">
+          <strong>✓ Strength: Improves localization, not just accuracy</strong>
+          The paper demonstrates improved Grad-CAM visualizations and quantitative weakly-supervised localization benchmarks. This confirms the method genuinely changes what the model learns, not just its calibration.
+        </li>
+        <li class="con">
+          <strong>✗ Limitation: Only rectangular patches</strong>
+          The bounding box assumption is a hard constraint. Real object boundaries are irregular; a rectangular cut may include irrelevant background or exclude key foreground. More expressive masks (elliptical, class-activation-guided, saliency-based) could be strictly more informative.
+        </li>
+        <li class="con">
+          <strong>✗ Limitation: Label assignment is approximate</strong>
+          The mixed label is computed from the ratio of patch <em>areas</em>, not from the ratio of semantically meaningful pixels. A 30% crop placed on a plain background still gets 70% of the label weight even if the semantic content ratio is wildly different.
+        </li>
+        <li class="con">
+          <strong>✗ Limitation: Single-object assumption</strong>
+          The paper evaluates primarily on single-label classification datasets (CIFAR, ImageNet). In multi-label scenarios (COCO detection), the label mixing strategy becomes ill-defined without adaptation.
+        </li>
+        <li class="con">
+          <strong>✗ Limitation: Hyperparameter sensitivity</strong>
+          The β parameter and <code>cutmix_prob</code> are tuned separately per dataset. CIFAR-100 uses <code>prob=0.5</code> while ImageNet uses <code>prob=1.0</code>. There is no principled method for selecting these; practitioners must grid-search.
+        </li>
+        <li class="con">
+          <strong>✗ Limitation: Evaluation gap</strong>
+          All downstream evaluations use ResNet-50. It is unclear whether the localization improvements hold at scale (ViT, ConvNeXt) or under different training regimes (MAE pre-training, CLIP-style contrastive learning).
+        </li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- § 5 — IMPROVEMENT SUGGESTIONS -->
+  <div class="section">
+    <div class="section-label">
+      <span class="section-num">05</span>
+      <span class="section-name">Future Directions</span>
+    </div>
+    <div class="section-body">
+      <h2>Improvement Suggestions</h2>
+      <p>
+        CutMix opened a rich research vein. Building on its foundations, several extensions could address its limitations:
+      </p>
+      <div class="suggestion-grid">
+        <div class="sug-card">
+          <span class="sug-num">1</span>
+          <h4 class="sug-title">Saliency-Guided Masking</h4>
+          <p class="sug-body">Replace random bounding boxes with object-aware masks generated from class activation maps or saliency models. This would ensure that pasted regions actually contain semantically meaningful content, making label mixing proportions more accurate.</p>
+        </div>
+        <div class="sug-card">
+          <span class="sug-num">2</span>
+          <h4 class="sug-title">Learnable Mixing Policy</h4>
+          <p class="sug-body">Rather than sampling λ from a fixed Beta distribution, learn the mixing policy via meta-learning or reinforcement learning to maximize validation performance — similar in spirit to AutoAugment but applied to the mixing operation itself.</p>
+        </div>
+        <div class="sug-card">
+          <span class="sug-num">3</span>
+          <h4 class="sug-title">Multi-label CutMix</h4>
+          <p class="sug-body">Extend the label assignment to support multi-label targets natively. For detection datasets, track which object instances fall inside the pasted region and assign fractional label weights based on bounding box IoU with the cut mask.</p>
+        </div>
+        <div class="sug-card">
+          <span class="sug-num">4</span>
+          <h4 class="sug-title">Feature-Space CutMix</h4>
+          <p class="sug-body">The paper mentions "Feature CutMix" but doesn't explore it deeply. Applying CutMix at intermediate feature layers (Manifold-Mixup style) could provide stronger regularization at multiple levels of the representation hierarchy.</p>
+        </div>
+      </div>
+
+      <div class="pullquote">
+        Notably, the subsequent SmoothMix (NeurIPS 2020) and CutMixup (arXiv 2021) papers took exactly these directions — a testament to how well CutMix identified the right tradeoffs to improve upon.
       </div>
     </div>
   </div>
-</div>
 
-<div class="container">
-<article>
+  <!-- § 6 — REPRODUCE -->
+  <div class="section">
+    <div class="section-label">
+      <span class="section-num">06</span>
+      <span class="section-name">Reproduce</span>
+    </div>
+    <div class="section-body">
+      <h2>Running It Yourself</h2>
+      <p>The official repo is public and well-maintained. To reproduce CIFAR-100 results (2 GPUs recommended):</p>
+      <pre data-lang="Bash"><code># Clone the repo
+git clone https://github.com/clovaai/CutMix-PyTorch
+cd CutMix-PyTorch
 
-  <h2>Introduction</h2>
+# Install dependencies (PyTorch > 1.0, torchvision > 0.2)
+pip install torch torchvision numpy
 
-  <p>
-    When you look at a photo and describe it, your eyes don't scan the entire image at once. You glance at a face, a dog, a sign — your attention shifts naturally as you form each word. This is so intuitive for humans that we rarely think about it. But for a machine trying to describe an image, it is a deceptively hard problem.
-  </p>
-  <p>
-    In 2015, Xu et al. published <strong>Show, Attend and Tell</strong> at ICML — a paper that didn't just improve image captioning scores, but fundamentally changed <em>how</em> we think about the task. By introducing a visual attention mechanism into the encoder-decoder framework, the model dynamically focuses on relevant spatial regions of an image as it generates each word of a caption, rather than working from a single compressed representation.
-  </p>
+# Train PyramidNet-200 with CutMix on CIFAR-100
+python train.py \
+  --net_type pyramidnet \
+  --dataset cifar100 \
+  --depth 200 \
+  --alpha 240 \
+  --batch_size 64 \
+  --lr 0.25 \
+  --expname PyraNet200 \
+  --epochs 300 \
+  --beta 1.0 \
+  --cutmix_prob 0.5 \
+  --no-verbose</code></pre>
 
-  <h2>The Problem</h2>
+      <p>For ImageNet (4 GPUs, ResNet-50):</p>
+      <pre data-lang="Bash"><code>python train.py \
+  --net_type resnet \
+  --dataset imagenet \
+  --batch_size 256 \
+  --lr 0.1 \
+  --depth 50 \
+  --epochs 300 \
+  --expname ResNet50 \
+  -j 40 \
+  --beta 1.0 \
+  --cutmix_prob 1.0 \
+  --no-verbose</code></pre>
 
-  <p>
-    Image captioning sits at the intersection of computer vision and natural language processing. A model must understand <em>what</em> is in an image — objects, their attributes, spatial relationships — and then express that understanding in fluent natural language. Prior to this work, the dominant approach used a CNN to encode an image into a single fixed-length vector, which was then fed into an LSTM to decode a sentence word by word.
-  </p>
-
-  <div class="callout">
-    <span class="callout-label">Core Limitation</span>
-    Compressing an entire image into a single vector creates an information bottleneck. The decoder must generate a full sentence from one static representation — with no mechanism to dynamically revisit different parts of the image as it generates each word.
-  </div>
-
-  <p>
-    This is particularly problematic for complex scenes. If a caption needs to describe both a frisbee and the person throwing it, a single global vector may capture the gist of the scene but fail to preserve the fine-grained spatial detail needed for accurate word-by-word generation. Prior work using fully-connected top-layer CNN features discards the spatial structure of the image entirely.
-  </p>
-
-  <h3>Why This Matters</h3>
-
-  <p>
-    Automatic image captioning has significant real-world relevance — from accessibility tools for the visually impaired, to automatic metadata generation for image databases, to scene understanding in robotics and autonomous systems. In the context of remote sensing specifically, where images are densely packed with spatially distinct objects (buildings, roads, vegetation, water bodies), the ability to locally attend to different regions is especially valuable. A model that can attend to a riverbed separately from a forested hillside is far more capable than one working from a blurry global average.
-  </p>
-
-  <h2>The Approach</h2>
-
-  <p>
-    Xu et al. propose replacing the single-vector image encoding with a set of spatial feature vectors, and introducing an attention mechanism that weights these vectors differently at each decoding step. The key insight is that lower convolutional layers preserve spatial structure, enabling the decoder to selectively focus on different image regions as it generates each word.
-  </p>
-
-  <div class="attention-demo">
-    <span class="attention-demo-label">Model Pipeline</span>
-    <div class="pipeline">
-      <div class="pipe-box">Input Image</div>
-      <div class="pipe-arrow">→</div>
-      <div class="pipe-box">CNN Encoder<br/><small>14×14 feature map</small></div>
-      <div class="pipe-arrow">→</div>
-      <div class="pipe-box highlight">Attention<br/><small>α weights per region</small></div>
-      <div class="pipe-arrow">→</div>
-      <div class="pipe-box">LSTM Decoder</div>
-      <div class="pipe-arrow">→</div>
-      <div class="pipe-box">Caption<br/><small>word by word</small></div>
+      <p>Pre-trained models are available on Dropbox (linked in the GitHub README) for both PyramidNet-200 (CIFAR-100, top-1 error: 14.23%) and ResNet-50 (ImageNet, top-1 error: 21.40%).</p>
     </div>
   </div>
 
-  <ol class="steps">
-    <li>
-      <strong>CNN Encoder — Spatial Features</strong>
-      <span>Instead of using the final fully-connected layer of a CNN, the model extracts features from a lower convolutional layer — specifically the 14×14×512 feature map from Oxford VGGNet (Simonyan &amp; Zisserman, 2014), pre-trained on ImageNet. This produces L = 196 annotation vectors, each representing a distinct spatial region of the image, preserving spatial structure that the top-layer pooled representations discard.</span>
-    </li>
-    <li>
-      <strong>Attention Mechanism — Where to Look</strong>
-      <span>At each decoding timestep t, a small multilayer perceptron (the attention model f<sub>att</sub>) takes the previous LSTM hidden state h<sub>t−1</sub> and each annotation vector a<sub>i</sub> to produce energy scores e<sub>ti</sub>. These are normalized via softmax into attention weights α<sub>ti</sub> — a probability distribution over all 196 spatial locations, indicating which regions are most relevant for generating the next word.</span>
-    </li>
-    <li>
-      <strong>Context Vector — What the Model Sees</strong>
-      <span>The attention weights are used to compute a context vector ẑ<sub>t</sub> — either a weighted sum (soft attention) or a sampled single-location representation (hard attention) of the annotation vectors. This dynamic, location-aware context vector is fed into the LSTM alongside the previous word embedding to condition next-word generation.</span>
-    </li>
-    <li>
-      <strong>LSTM Decoder — Word by Word</strong>
-      <span>A standard LSTM generates one word per timestep, conditioned on the context vector ẑ<sub>t</sub>, the previous hidden state h<sub>t−1</sub>, and the embedding of the previously generated word. The initial LSTM memory and hidden states are computed from the mean of all annotation vectors through two separate learned MLPs.</span>
-    </li>
-  </ol>
+</main>
 
-  <h3>Soft vs Hard Attention</h3>
-
-  <p>
-    One of the paper's most intellectually interesting contributions is the proposal of two theoretically distinct attention variants:
-  </p>
-
-  <div class="infobox">
-    <span class="infobox-label">Soft Attention (Deterministic)</span>
-    <p style="margin:0; font-size:0.92rem; color:var(--text-muted);">
-      Computes the context vector as a weighted average over all annotation vectors — i.e., the expectation E<sub>p(s<sub>t</sub>|a)</sub>[ẑ<sub>t</sub>]. Fully differentiable, trained end-to-end with standard backpropagation. Also introduces <em>doubly stochastic regularization</em>: a penalty term added to the loss that encourages the model to attend to every part of the image at least once across the full caption (∑<sub>t</sub> α<sub>ti</sub> ≈ 1 for each location i), improving both coverage and descriptive detail.
-    </p>
-  </div>
-
-  <div class="infobox">
-    <span class="infobox-label">Hard Attention (Stochastic)</span>
-    <p style="margin:0; font-size:0.92rem; color:var(--text-muted);">
-      Samples a single attention location at each timestep from a multinoulli distribution parameterized by the attention weights α. Because this sampling operation is not differentiable, the model is trained using the REINFORCE algorithm (Williams, 1992) — a policy gradient method from reinforcement learning — by maximizing a variational lower bound on the log-likelihood. Harder to train due to high gradient variance, but achieves slightly better BLEU scores on most benchmarks.
-    </p>
-  </div>
-
-  <p>
-    The soft attention context vector is computed as:
-  </p>
-
-  <div class="formula">
-ẑ_t = Σ_i  α_{ti} · a_i
-<br><br>
-where:  α_{ti} = exp(e_{ti}) / Σ_k exp(e_{tk})
-<br>
-and:    e_{ti} = f_att(a_i, h_{t-1})
-  </div>
-
-  <p>
-    The soft attention model is trained by minimizing a penalized negative log-likelihood that incorporates the doubly stochastic regularization term:
-  </p>
-
-  <div class="formula">
-L_d = −log p(y | a)  +  λ · Σ_i (1 − Σ_t α_{ti})²
-  </div>
-
-  <h2>Results</h2>
-
-  <p>
-    The model is evaluated on three benchmark datasets — Flickr8k, Flickr30k, and MS COCO — using BLEU-1 through BLEU-4 and METEOR scores. Results are reported for a single model (no ensembling), using Oxford VGGNet features.
-  </p>
-
-  <div class="stats-row">
-    <div class="stat-box">
-      <div class="stat-number">25.0</div>
-      <div class="stat-label">BLEU-4 on MS COCO<br/>(Hard Attention — best BLEU)</div>
-    </div>
-    <div class="stat-box">
-      <div class="stat-number">23.90</div>
-      <div class="stat-label">METEOR on MS COCO<br/>(Soft Attention — best METEOR)</div>
-    </div>
-    <div class="stat-box">
-      <div class="stat-number">21.3</div>
-      <div class="stat-label">BLEU-4 on Flickr8k<br/>(Hard Attention, vs 17.7 baseline)</div>
-    </div>
-  </div>
-
-  <p>
-    On Flickr8k, the Hard Attention variant achieves a BLEU-4 of 21.3 compared to 17.7 for the Log Bilinear baseline — a substantial improvement. On MS COCO, Soft Attention achieves a METEOR score of 23.90, significantly outperforming all baselines including Google NIC (20.71). The two variants offer a complementary trade-off: Hard Attention leads on BLEU-4, while Soft Attention achieves the best METEOR on MS COCO.
-  </p>
-
-  <table class="results-table">
-    <thead>
-      <tr>
-        <th>Model</th>
-        <th>BLEU-1</th>
-        <th>BLEU-4</th>
-        <th>METEOR</th>
-      </tr>
-    </thead>
-    <tbody>
-      <tr>
-        <td>Google NIC (Vinyals et al., 2014)</td>
-        <td>66.6</td>
-        <td>24.6</td>
-        <td>&ndash;</td>
-      </tr>
-      <tr>
-        <td>Log Bilinear (Kiros et al., 2014)</td>
-        <td>70.8</td>
-        <td>24.3</td>
-        <td>20.03</td>
-      </tr>
-      <tr class="winner">
-        <td>Soft Attention (Xu et al., 2015)</td>
-        <td>70.7</td>
-        <td>24.3</td>
-        <td>23.90 ↑</td>
-      </tr>
-      <tr class="winner">
-        <td>Hard Attention (Xu et al., 2015)</td>
-        <td>71.8</td>
-        <td>25.0 ↑</td>
-        <td>23.04</td>
-      </tr>
-    </tbody>
-  </table>
-
-  <p>
-    Beyond quantitative metrics, the paper's attention visualizations are genuinely compelling. By upsampling the 14×14 attention weight maps (by a factor of 2<sup>4</sup> = 16) and applying a Gaussian filter, the model's focus can be overlaid on the original image. Generating the word "bird" shifts attention to the bird; "water" shifts it to the lake. This level of spatial interpretability was rare in deep learning models at the time of publication. Crucially, the attention can go beyond object-level focus — it can attend to relationships and abstract spatial regions, which rule-based and detection-based captioning systems could not.
-  </p>
-
-  <h2>Critical Analysis</h2>
-
-  <div class="pro-con">
-    <div class="pro-con-box pros">
-      <h4>Strengths</h4>
-      <ul>
-        <li>Principled extension of the encoder-decoder framework with clear motivation</li>
-        <li>Attention maps provide genuine, interpretable spatial alignment</li>
-        <li>Two theoretically distinct attention variants, both well-motivated</li>
-        <li>Doubly stochastic regularization improves coverage in a simple, effective way</li>
-        <li>State-of-the-art across all three benchmarks at the time of publication</li>
-        <li>Highly reproducible — public code released at <a href="https://github.com/kelvinxu/arctic-captions" target="_blank">github.com/kelvinxu/arctic-captions</a></li>
-        <li>Cited over 20,000 times; a foundational precursor to the Transformer cross-attention mechanism</li>
-      </ul>
-    </div>
-    <div class="pro-con-box cons">
-      <h4>Limitations</h4>
-      <ul>
-        <li>Hard attention requires REINFORCE — high variance gradients, slow and unstable training</li>
-        <li>VGGNet encoder is kept frozen; no joint fine-tuning with the captioning objective</li>
-        <li>Attention operates on a coarse 14×14 spatial grid (196 locations), which can miss small objects</li>
-        <li>BLEU correlates poorly with human judgment of caption quality</li>
-        <li>No cross-modal attention: vision and language interact only via the LSTM hidden state</li>
-        <li>Sequential LSTM decoding is inherently slow and not parallelizable at inference or training time</li>
-        <li>Vocabulary is capped at 10,000 words, limiting the expressiveness of generated captions</li>
-      </ul>
-    </div>
-  </div>
-
-  <h3>Improvement Suggestions</h3>
-
-  <p>
-    <strong>End-to-end encoder fine-tuning.</strong> The VGGNet encoder is kept frozen throughout training. Jointly fine-tuning the CNN encoder with the attention-decoder on the captioning objective would allow the visual features to become task-specific — a direction demonstrated successfully by subsequent work. With sufficient regularization (e.g., dropout, lower learning rates for the CNN), this should improve both alignment quality and BLEU/METEOR scores.
-  </p>
-
-  <p>
-    <strong>Higher-resolution attention.</strong> The 14×14 spatial grid provides 196 candidate attention locations, which is relatively coarse for images containing small or densely-packed objects. Using features from earlier, higher-resolution layers or applying multi-scale attention (as in Feature Pyramid Networks) would enable finer-grained localization.
-  </p>
-
-  <p>
-    <strong>Replacing the LSTM decoder with a Transformer.</strong> The sequential nature of LSTM decoding is a fundamental bottleneck — both for training speed and model expressiveness. A Transformer-based decoder with self-attention and multi-head cross-attention over the spatial feature map would be faster, more parallelizable, and better at capturing long-range dependencies within the caption. The attention mechanism introduced in this paper is, in fact, a direct predecessor to Transformer cross-attention.
-  </p>
-
-  <p>
-    <strong>Richer evaluation metrics.</strong> Relying on BLEU-4 and METEOR alone is insufficient. Both are known to correlate weakly with human judgments of caption quality for complex scenes. Later metrics such as CIDEr (which rewards consensus across reference captions), SPICE (which evaluates semantic propositions), and CLIPScore (which uses vision-language model embeddings) provide stronger signal and should be co-reported for thorough evaluation.
-  </p>
-
-  <p>
-    <strong>Learnable attention architecture.</strong> The attention model f<sub>att</sub> is a small, fixed MLP. Modern variants such as scaled dot-product attention, multi-head attention, or cross-attention with learned key/query/value projections are more expressive and efficient, and may produce better-calibrated alignment weights.
-  </p>
-
-  <h2>Conclusion</h2>
-
-  <p>
-    Show, Attend and Tell is one of those rare papers that is both practically impactful and intellectually illuminating. It introduced a simple but powerful idea — letting the model decide where to look — and demonstrated that this yields better captions <em>and</em> more interpretable models simultaneously.
-  </p>
-  <p>
-    The paper's core contribution, soft attention over spatial feature maps, became a cornerstone of multimodal deep learning and directly influenced the design of the Transformer's cross-attention mechanism. A decade later, it remains essential reading for anyone working at the intersection of vision and language.
-  </p>
-  <p>
-    The publicly released codebase makes this paper well-suited to hands-on experimentation, and the modularity of the encoder-attention-decoder framework means its ideas transfer naturally to other vision-language tasks including visual question answering, image-text retrieval, and dense captioning.
-  </p>
-
-  <div class="callout">
-  <span class="callout-label">Resources</span>
-  📄 Paper: 
-  <a href="https://proceedings.mlr.press/v37/xuc15.html" target="_blank">
-    <strong>Xu et al., ICML 2015</strong>
-  </a> — Proceedings of the 32nd International Conference on Machine Learning, JMLR: W&CP Volume 37
-  <br/>
-  💻 Code: 
-  <a href="https://github.com/kelvinxu/arctic-captions" target="_blank">
-    github.com/kelvinxu/arctic-captions
-  </a>
- </div>
-  
-
-</article>
-</div>
-
+<!-- FOOTER -->
 <footer>
-  <div class="container">
-    <p>Written for ML for Remote Sensing — II &nbsp;·&nbsp; Spring 2025-2 &nbsp;·&nbsp; IIT Bombay</p>
-    <p style="margin-top:0.5rem;">
-      Paper: <em>Show, Attend and Tell: Neural Image Caption Generation with Visual Attention</em>
-      <br/>Xu, Ba, Kiros, Cho, Courville, Salakhutdinov, Zemel, Bengio &nbsp;·&nbsp; ICML 2015
-    </p>
+  <div>
+    <h3>About This Blog</h3>
+    <p>Written as part of a deep learning course blog assignment. CutMix was presented as an oral talk at ICCV 2019 — one of the top computer vision venues (A* conference).</p>
+    <p>The paper satisfies all requirements: published at an A* venue, deals with images, and has a <a href="https://github.com/clovaai/CutMix-PyTorch" target="_blank">public GitHub repository</a>.</p>
+    <p><strong>Authors:</strong> Sangdoo Yun, Dongyoon Han, Seong Joon Oh, Sanghyuk Chun, Junsuk Choe, Youngjoon Yoo — Clova AI Research, NAVER Corp.</p>
+  </div>
+  <div>
+    <h3>Citation</h3>
+    <div class="footer-cite">
+@inproceedings{yun2019cutmix,<br>
+&nbsp;&nbsp;title={CutMix: Regularization Strategy to<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Train Strong Classifiers with<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Localizable Features},<br>
+&nbsp;&nbsp;author={Yun, Sangdoo and Han, Dongyoon<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;and Oh, Seong Joon and Chun,<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Sanghyuk and Choe, Junsuk<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;and Yoo, Youngjoon},<br>
+&nbsp;&nbsp;booktitle={ICCV},<br>
+&nbsp;&nbsp;year={2019}<br>
+}
+    </div>
   </div>
 </footer>
+<div class="footer-bottom">
+  <p>Deep Learning Course · Blog Assignment · ICCV 2019 Paper Review</p>
+  <p><a href="https://arxiv.org/abs/1905.04899" style="color:rgba(245,240,232,0.4)">arxiv.org/abs/1905.04899</a></p>
+</div>
 
 <script>
+  // Scroll progress bar
   window.addEventListener('scroll', () => {
     const doc = document.documentElement;
-    const scrollTop = doc.scrollTop || document.body.scrollTop;
-    const scrollHeight = doc.scrollHeight - doc.clientHeight;
-    const progress = (scrollTop / scrollHeight) * 100;
-    document.getElementById('progress').style.width = progress + '%';
+    const scrolled = doc.scrollTop / (doc.scrollHeight - doc.clientHeight);
+    document.getElementById('progressBar').style.width = (scrolled * 100) + '%';
   });
-</script>
 
+  // Animate bars on scroll
+  const barObserver = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        const bars = entry.target.querySelectorAll('.bar-fill');
+        bars.forEach(bar => {
+          const val = parseFloat(bar.getAttribute('data-val'));
+          const maxVal = 16.6;
+          const pct = (val / maxVal) * 100;
+          bar.style.width = pct + '%';
+        });
+      }
+    });
+  }, { threshold: 0.3 });
+
+  const cifarChart = document.getElementById('cifarChart');
+  if (cifarChart) {
+    // Reset widths to 0 initially
+    cifarChart.querySelectorAll('.bar-fill').forEach(b => b.style.width = '0%');
+    barObserver.observe(cifarChart);
+  }
+</script>
 </body>
 </html>
